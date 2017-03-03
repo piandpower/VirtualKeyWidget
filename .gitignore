@@ -1,0 +1,7 @@
+# Add UE4 build folders
+Binaries/
+Intermediate/
+
+# Add temporary fils
+*.swp
+
