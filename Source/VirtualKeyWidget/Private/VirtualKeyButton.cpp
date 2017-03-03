@@ -114,35 +114,4 @@ void UVirtualKeyButton::OnClickedVirtualKey()
 		ShiftInput.ki.wVk = 0x10;
 		SendInput(1, &ShiftInput, sizeof(INPUT));
 	}
-	/*
-	HIMC himc;
-	unsigned long dwConversion, dwSentence;
-	himc = ImmGetContext((HWND)GEngine->GameViewport->GetWindow()->GetNativeWindow()->GetOSWindowHandle());
-	if (himc)
-	{
-		ImmSetOpenStatus(himc, true);
-		ImmGetConversionStatus(himc, &dwConversion, &dwSentence);
-
-		if (dwConversion & IME_CMODE_HANGUL)
-		{
-			// 한글 입력기 상태
-
-			// 영어로 변환
-			dwConversion = IME_CMODE_ALPHANUMERIC;
-		}
-		else
-		{
-			// 영어 입력기 상태
-
-			// 한글로 변환
-			dwConversion = IME_CMODE_HANGUL;
-		}
-		ImmSetConversionStatus(himc, dwConversion, dwSentence);
-		ImmReleaseContext((HWND)GEngine->GameViewport->GetWindow()->GetNativeWindow()->GetOSWindowHandle(), himc);
-	}
-	else
-	{
-		// 입력 불가 상태
-	}
-	*/
 }
