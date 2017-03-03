@@ -2,6 +2,7 @@
 
 #include "VirtualKeyWidgetPrivatePCH.h"
 #include "VirtualKeyButton.h"
+#include "SVirtualKeyButton.h"
 
 
 
@@ -9,10 +10,10 @@
 
 UVirtualKeyButton::UVirtualKeyButton(const FObjectInitializer& InObjectInitializer)
 	: Super(InObjectInitializer)
-	, PreviousFocusedWidget(nullptr)
 {
-	OnPressed.AddDynamic(this, &UVirtualKeyButton::OnPressedVirtualKey);
-	OnReleased.AddDynamic(this, &UVirtualKeyButton::OnReleasedVirtualKey);
+	OnClicked.AddDynamic(this, &UVirtualKeyButton::OnClickedVirtualKey);
+
+	IsFocusable = false;
 }
 
 EKeyboardIME UVirtualKeyButton::GetKeyboardIME()
@@ -35,20 +36,30 @@ EKeyboardIME UVirtualKeyButton::GetKeyboardIME()
 	}
 }
 
-void UVirtualKeyButton::OnPressedVirtualKey()
+TSharedRef<SWidget> UVirtualKeyButton::RebuildWidget()
 {
-	PreviousFocusedWidget = FSlateApplicationBase::Get().GetKeyboardFocusedWidget();
-}
+	MyButton = SNew(SVirtualKeyButton)
+		.OnClicked(BIND_UOBJECT_DELEGATE(FOnClicked, SlateHandleClicked))
+		.OnPressed(BIND_UOBJECT_DELEGATE(FSimpleDelegate, SlateHandlePressed))
+		.OnReleased(BIND_UOBJECT_DELEGATE(FSimpleDelegate, SlateHandleReleased))
+		.OnHovered_UObject(this, &ThisClass::SlateHandleHovered)
+		.OnUnhovered_UObject(this, &ThisClass::SlateHandleUnhovered)
+		.ButtonStyle(&WidgetStyle)
+		.ClickMethod(ClickMethod)
+		.TouchMethod(TouchMethod)
+		.IsFocusable(IsFocusable)
+		;
 
-void UVirtualKeyButton::OnReleasedVirtualKey()
-{
-	auto d = FSlateApplicationBase::Get().GetKeyboardFocusedWidget();
-	if (PreviousFocusedWidget.IsValid())
+	if (GetChildrenCount() > 0)
 	{
-		FSlateApplication::Get().ClearKeyboardFocus(EFocusCause::SetDirectly);
-		FSlateApplication::Get().SetKeyboardFocus(PreviousFocusedWidget.Pin());
+		Cast<UButtonSlot>(GetContentSlot())->BuildSlot(MyButton.ToSharedRef());
 	}
 
+	return MyButton.ToSharedRef();
+}
+
+void UVirtualKeyButton::OnClickedVirtualKey()
+{
 	FString TargetKey;
 	if (bIsShift)
 	{
@@ -68,18 +79,41 @@ void UVirtualKeyButton::OnReleasedVirtualKey()
 		return;
 	}
 
-	INPUT ip;
-	ip.type = INPUT_KEYBOARD;
-	ip.ki.wScan = 0;
-	ip.ki.time = 0;
-	ip.ki.dwExtraInfo = 0;
-	ip.ki.dwFlags = 0;
-	ip.ki.wVk = PressedKey;
-	SendInput(1, &ip, sizeof(INPUT));
+	if (bIsShift)
+	{
+		INPUT ShiftInput;
+		ShiftInput.type = INPUT_KEYBOARD;
+		ShiftInput.ki.wScan = 0;
+		ShiftInput.ki.time = 0;
+		ShiftInput.ki.dwExtraInfo = 0;
+		ShiftInput.ki.dwFlags = 0;
+		ShiftInput.ki.wVk = 0x10;
+		SendInput(1, &ShiftInput, sizeof(INPUT));
+	}
 
-	ip.ki.dwFlags = KEYEVENTF_KEYUP;
-	SendInput(1, &ip, sizeof(INPUT));
+	INPUT KeyInput;
+	KeyInput.type = INPUT_KEYBOARD;
+	KeyInput.ki.wScan = 0;
+	KeyInput.ki.time = 0;
+	KeyInput.ki.dwExtraInfo = 0;
+	KeyInput.ki.dwFlags = 0;
+	KeyInput.ki.wVk = PressedKey;
+	SendInput(1, &KeyInput, sizeof(INPUT));
 
+	KeyInput.ki.dwFlags = KEYEVENTF_KEYUP;
+	SendInput(1, &KeyInput, sizeof(INPUT));
+
+	if (bIsShift)
+	{
+		INPUT ShiftInput;
+		ShiftInput.type = INPUT_KEYBOARD;
+		ShiftInput.ki.wScan = 0;
+		ShiftInput.ki.time = 0;
+		ShiftInput.ki.dwExtraInfo = 0;
+		ShiftInput.ki.dwFlags = KEYEVENTF_KEYUP;
+		ShiftInput.ki.wVk = 0x10;
+		SendInput(1, &ShiftInput, sizeof(INPUT));
+	}
 	/*
 	HIMC himc;
 	unsigned long dwConversion, dwSentence;

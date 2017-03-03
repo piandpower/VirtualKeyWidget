@@ -35,11 +35,11 @@ public:
 
 protected:
 
-	UFUNCTION()
-	void OnPressedVirtualKey();
-	UFUNCTION()
-	void OnReleasedVirtualKey();
+	//~ Begin UWidget Interface
+	virtual TSharedRef<SWidget> RebuildWidget() override;
+	//~ End UWidget Interface
 
-	TWeakPtr<SWidget> PreviousFocusedWidget;
+	UFUNCTION()
+	void OnClickedVirtualKey();
 	
 };
