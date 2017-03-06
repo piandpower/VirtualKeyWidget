@@ -12,12 +12,13 @@
 	"SupportURL": "",
 	"CanContainContent": false,
 	"IsBetaVersion": false,
-	"Installed": false,
+	"Installed": true,
 	"Modules": [
 		{
 			"Name": "VirtualKeyWidget",
-			"Type": "Developer",
-			"LoadingPhase": "Default"
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"WhitelistPlatforms": ["Win64"]
 		}
 	]
 }
