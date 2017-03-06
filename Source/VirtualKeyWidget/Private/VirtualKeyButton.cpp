@@ -10,10 +10,19 @@
 
 UVirtualKeyButton::UVirtualKeyButton(const FObjectInitializer& InObjectInitializer)
 	: Super(InObjectInitializer)
+	, PressTime(0.f)
+	, KeepInputDelay(0.7f)
+	, KeepInputTerm(0.03f)
 {
 	OnClicked.AddDynamic(this, &UVirtualKeyButton::OnClickedVirtualKey);
+	OnPressed.AddDynamic(this, &UVirtualKeyButton::OnPressedVirtualKey);
+	OnReleased.AddDynamic(this, &UVirtualKeyButton::OnReleasedVirtualKey);
 
 	IsFocusable = false;
+}
+
+UVirtualKeyButton::~UVirtualKeyButton()
+{
 }
 
 EKeyboardIME UVirtualKeyButton::GetKeyboardIME()
@@ -34,6 +43,41 @@ EKeyboardIME UVirtualKeyButton::GetKeyboardIME()
 	{
 		return EKeyboardIME::Alphanumeric;
 	}
+}
+
+void UVirtualKeyButton::Tick(float DeltaTime)
+{
+	if (IsPressed())
+	{
+		bool IsClicked = false;
+		PressTime += DeltaTime;
+
+		if (PressTime > KeepInputDelay)
+		{
+			float Term = PressTime - KeepInputDelay;
+			if (Term > KeepInputTerm)
+			{
+				IsClicked = true;
+				PressTime = KeepInputDelay;
+			}
+		}
+
+		if (IsClicked)
+		{
+			// Keep Pressing
+			OnClickedVirtualKey();
+		}
+	}
+}
+
+bool UVirtualKeyButton::IsTickable() const
+{
+	return GetParent() != nullptr;
+}
+
+TStatId UVirtualKeyButton::GetStatId() const
+{
+	RETURN_QUICK_DECLARE_CYCLE_STAT(UVirtualKeyButton, STATGROUP_Tickables);
 }
 
 TSharedRef<SWidget> UVirtualKeyButton::RebuildWidget()
@@ -90,20 +134,7 @@ void UVirtualKeyButton::OnClickedVirtualKey()
 		ShiftInput.ki.wVk = 0x10;
 		SendInput(1, &ShiftInput, sizeof(INPUT));
 	}
-
-	INPUT KeyInput;
-	KeyInput.type = INPUT_KEYBOARD;
-	KeyInput.ki.wScan = 0;
-	KeyInput.ki.time = 0;
-	KeyInput.ki.dwExtraInfo = 0;
-	KeyInput.ki.dwFlags = 0;
-	KeyInput.ki.wVk = PressedKey;
-	SendInput(1, &KeyInput, sizeof(INPUT));
-
-	KeyInput.ki.dwFlags = KEYEVENTF_KEYUP;
-	SendInput(1, &KeyInput, sizeof(INPUT));
-
-	if (bIsShift)
+	else
 	{
 		INPUT ShiftInput;
 		ShiftInput.type = INPUT_KEYBOARD;
@@ -114,4 +145,27 @@ void UVirtualKeyButton::OnClickedVirtualKey()
 		ShiftInput.ki.wVk = 0x10;
 		SendInput(1, &ShiftInput, sizeof(INPUT));
 	}
+
+	INPUT KeyInput;
+	KeyInput.type = INPUT_KEYBOARD;
+	KeyInput.ki.wScan = 0;
+	KeyInput.ki.time = 0;
+	KeyInput.ki.dwExtraInfo = 0;
+	KeyInput.ki.dwFlags = 0;
+	KeyInput.ki.wVk = PressedKey;
+	SendInput(1, &KeyInput, sizeof(INPUT));
+	
+	KeyInput.ki.dwFlags = KEYEVENTF_KEYUP;
+	SendInput(1, &KeyInput, sizeof(INPUT));
 }
+
+void UVirtualKeyButton::OnPressedVirtualKey()
+{
+	PressTime = 0.f;
+}
+
+void UVirtualKeyButton::OnReleasedVirtualKey()
+{
+
+}
+
