@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "STouchButton.h"
+#include "SButton.h"
 
-class VIRTUALKEYWIDGET_API SVirtualKeyButton : public STouchButton
+class VIRTUALKEYWIDGET_API STouchButton : public SButton
 {
 public:
 

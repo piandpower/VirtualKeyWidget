@@ -7,12 +7,12 @@
 
 FReply SVirtualKeyButton::OnMouseButtonDown(const FGeometry& MyGeometry, const FPointerEvent& MouseEvent)
 {
-	FReply Reply = FReply::Handled();
-	if (MouseEvent.IsTouchEvent())
-	{	// button event called twice in windows touch screen.
-		Reply = SButton::OnMouseButtonDown(MyGeometry, MouseEvent);
-	}
+	FReply Reply = STouchButton::OnMouseButtonDown(MyGeometry, MouseEvent);
 
+	if (!Reply.IsEventHandled())
+	{
+		Reply = FReply::Handled();
+	}
 	if (Reply.IsEventHandled())
 	{
 		TSharedPtr<SWidget> FocusedWidget = FSlateApplicationBase::Get().GetKeyboardFocusedWidget();
